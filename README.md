@@ -1,1 +1,285 @@
 # fried-system
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>炸物店經營管理系統 v5.1</title>
+
+<style>
+body{
+font-family: Arial, sans-serif;
+background:#f4f6f8;
+margin:0;
+padding:20px;
+}
+
+h1,h2{
+text-align:center;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+background:white;
+margin-bottom:20px;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:6px;
+text-align:center;
+}
+
+th{
+background:#333;
+color:white;
+}
+
+input{
+width:80px;
+padding:4px;
+text-align:center;
+}
+
+.product{
+width:140px;
+}
+
+button{
+padding:6px 10px;
+cursor:pointer;
+}
+
+.controlBtn{
+background:#e74c3c;
+color:white;
+border:none;
+}
+
+.addBtn{
+padding:10px 20px;
+font-size:16px;
+margin:10px 0;
+}
+
+.section{
+margin-top:30px;
+}
+
+@media (max-width:700px){
+table{
+font-size:12px;
+}
+input{
+width:60px;
+}
+.product{
+width:110px;
+}
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🍗 炸物店經營管理系統</h1>
+
+<h2>產品成本與平台利潤</h2>
+
+<table id="table">
+<tr>
+<th>產品</th>
+<th>成本</th>
+<th>店內價</th>
+<th>平台售價</th>
+<th>毛利率%</th>
+<th>建議售價(40%)</th>
+<th>店內利潤</th>
+<th>熊貓利潤</th>
+<th>Uber利潤</th>
+<th>刪除</th>
+</tr>
+</table>
+
+<button class="addBtn" onclick="addRow()">➕ 新增品項</button>
+
+<div class="section">
+<h2>📦 庫存管理</h2>
+
+<table id="stockTable">
+<tr>
+<th>品項</th>
+<th>庫存</th>
+<th>刪除</th>
+</tr>
+</table>
+
+</div>
+
+<div class="section">
+
+<h2>📊 每日營業試算</h2>
+
+<label>今日訂單數：</label>
+<input id="orders">
+
+<label>平均客單價：</label>
+<input id="avg">
+
+<button onclick="calcDaily()">計算</button>
+
+<p id="daily"></p>
+
+</div>
+
+<button onclick="exportCSV()">匯出Excel</button>
+
+<script>
+
+const defaultProducts=[
+"香G排","臭豆腐G排","鹹酥G","脆G丁","蚵仔酥",
+"長春條","炸物拼盤","薯條","脆薯","熱狗棒",
+"小熱狗","銀絲卷","芋籤","麻吉芋丸","素餅皮",
+"杏鮑菇","金針菇","香Q糕","百頁豆腐","生豆包",
+"黑輪","天婦羅","棒棒腿"
+]
+
+const table=document.getElementById("table")
+const stockTable=document.getElementById("stockTable")
+
+function createRow(name=""){
+
+let row=table.insertRow()
+
+row.innerHTML=`
+<td><input class="product" value="${name}"></td>
+<td><input class="cost"></td>
+<td><input class="store"></td>
+<td><input class="platform"></td>
+<td class="margin"></td>
+<td class="suggest"></td>
+<td class="storeProfit"></td>
+<td class="pandaProfit"></td>
+<td class="uberProfit"></td>
+<td><button class="controlBtn" onclick="deleteRow(this)">刪除</button></td>
+`
+
+}
+
+function createStock(name=""){
+
+let row=stockTable.insertRow()
+
+row.innerHTML=`
+<td><input class="product" value="${name}"></td>
+<td><input></td>
+<td><button class="controlBtn" onclick="deleteStock(this)">刪除</button></td>
+`
+
+}
+
+defaultProducts.forEach(p=>{
+createRow(p)
+createStock(p)
+})
+
+function addRow(){
+createRow("")
+createStock("")
+}
+
+function deleteRow(btn){
+let row=btn.parentNode.parentNode
+row.remove()
+}
+
+function deleteStock(btn){
+let row=btn.parentNode.parentNode
+row.remove()
+}
+
+document.addEventListener("input",calculate)
+
+function calculate(){
+
+const rows=document.querySelectorAll("#table tr")
+
+rows.forEach((row,i)=>{
+
+if(i==0) return
+
+let cost=parseFloat(row.querySelector(".cost").value)||0
+let store=parseFloat(row.querySelector(".store").value)||0
+let platform=parseFloat(row.querySelector(".platform").value)||0
+
+let margin=store?((store-cost)/store)*100:0
+let suggest=cost/(1-0.4)
+
+let storeProfit=store-cost
+let pandaProfit=platform*0.66-cost
+let uberProfit=platform*0.65-cost
+
+row.querySelector(".margin").innerText=margin?margin.toFixed(1)+"%":""
+row.querySelector(".suggest").innerText=suggest?suggest.toFixed(0):""
+row.querySelector(".storeProfit").innerText=storeProfit?storeProfit.toFixed(0):""
+row.querySelector(".pandaProfit").innerText=pandaProfit?pandaProfit.toFixed(0):""
+row.querySelector(".uberProfit").innerText=uberProfit?uberProfit.toFixed(0):""
+
+})
+
+}
+
+function calcDaily(){
+
+let orders=parseFloat(document.getElementById("orders").value)||0
+let avg=parseFloat(document.getElementById("avg").value)||0
+
+let revenue=orders*avg
+let pandaFee=revenue*0.34
+let profit=revenue-pandaFee
+
+document.getElementById("daily").innerText=
+"今日營收:"+revenue+"  平台抽成:"+pandaFee+"  預估淨利:"+profit
+
+}
+
+function exportCSV(){
+
+let csv="產品,成本,店內價,平台售價,毛利率,建議售價,店內利潤,熊貓利潤,Uber利潤\n"
+
+const rows=document.querySelectorAll("#table tr")
+
+rows.forEach((row,i)=>{
+
+if(i==0) return
+
+let name=row.querySelector(".product").value
+let cost=row.querySelector(".cost").value||""
+let store=row.querySelector(".store").value||""
+let platform=row.querySelector(".platform").value||""
+let margin=row.querySelector(".margin").innerText
+let suggest=row.querySelector(".suggest").innerText
+let storeProfit=row.querySelector(".storeProfit").innerText
+let panda=row.querySelector(".pandaProfit").innerText
+let uber=row.querySelector(".uberProfit").innerText
+
+csv+=`${name},${cost},${store},${platform},${margin},${suggest},${storeProfit},${panda},${uber}\n`
+
+})
+
+let blob=new Blob(["\ufeff"+csv],{type:"text/csv"})
+let url=URL.createObjectURL(blob)
+
+let a=document.createElement("a")
+a.href=url
+a.download="炸物店管理.csv"
+a.click()
+
+}
+
+</script>
+
+</body>
+</html>
